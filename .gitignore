@@ -1,0 +1,8 @@
+# Moodle WebDAV Check module
+/node_modules/
+*.swp
+*.swo
+*~
+.DS_Store
+.idea/
+.vscode/
