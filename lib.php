@@ -234,13 +234,16 @@ function webdavcheck_get_completion_state($course, $cm, $userid, $type) {
         return $type == COMPLETION_AND;
     }
 
-    $user = $DB->get_record('user', ['id' => $userid]);
-    if (!$user) {
+    // Only read the stored completion state; the actual WebDAV check is done in view.php
+    // when the user actively visits the activity. This avoids querying the WebDAV server
+    // on every course page load or completion report view.
+    $completion = $DB->get_record('course_modules_completion', ['coursemoduleid' => $cm->id, 'userid' => $userid]);
+
+    if (!$completion) {
         return $type == COMPLETION_AND;
     }
 
-    $result = webdavcheck_check_file($webdavcheck, $user);
-    return $result['found'];
+    return $completion->completionstate == COMPLETION_COMPLETE;
 }
 
 /**
