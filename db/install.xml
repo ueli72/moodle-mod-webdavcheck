@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="mod/webdavcheck/db" VERSION="20260420" COMMENT="XMLDB file for Moodle mod/webdavcheck">
+    <TABLES>
+        <TABLE NAME="webdavcheck" COMMENT="Each webdavcheck is one activity">
+            <FIELDS>
+                <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" NEXT="course"/>
+                <FIELD NAME="course" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" COMMENT="Course webdavcheck activity belongs to" NEXT="name"/>
+                <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="name field for moodle instances" NEXT="intro"/>
+                <FIELD NAME="intro" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="General introduction of the webdavcheck activity" NEXT="introformat"/>
+                <FIELD NAME="introformat" TYPE="int" LENGTH="4" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" COMMENT="Format of intro field" NEXT="pathtemplate"/>
+                <FIELD NAME="pathtemplate" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="Relative path template with {$user} placeholder" NEXT="filepattern"/>
+                <FIELD NAME="filepattern" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="File pattern with wildcards" NEXT="successtext"/>
+                <FIELD NAME="successtext" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="HTML text to show on success" NEXT="successtextformat"/>
+                <FIELD NAME="successtextformat" TYPE="int" LENGTH="4" NOTNULL="true" UNSIGNED="true" DEFAULT="1" SEQUENCE="false" COMMENT="Format of success text field" NEXT="failuretext"/>
+                <FIELD NAME="failuretext" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="HTML text to show on failure" NEXT="failuretextformat"/>
+                <FIELD NAME="failuretextformat" TYPE="int" LENGTH="4" NOTNULL="true" UNSIGNED="true" DEFAULT="1" SEQUENCE="false" COMMENT="Format of failure text field" NEXT="completionwebdav"/>
+                <FIELD NAME="completionwebdav" TYPE="int" LENGTH="1" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" COMMENT="Completion rule: require WebDAV file present" NEXT="timemodified"/>
+                <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" COMMENT="Last modified time"/>
+            </FIELDS>
+            <KEYS>
+                <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+            </KEYS>
+            <INDEXES>
+                <INDEX NAME="course" UNIQUE="false" FIELDS="course"/>
+            </INDEXES>
+        </TABLE>
+    </TABLES>
+</XMLDB>
