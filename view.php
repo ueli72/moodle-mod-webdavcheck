@@ -47,6 +47,12 @@ $completion->set_module_viewed($cm);
 // Check WebDAV file for current user (used for display only).
 $result = webdavcheck_check_file($webdavcheck, $USER);
 
+// Update completion state if the WebDAV completion rule is enabled.
+if ($completion->is_enabled() && !empty($webdavcheck->completionwebdav)) {
+    $status = $result['found'] ? COMPLETION_COMPLETE : COMPLETION_INCOMPLETE;
+    $completion->update_state($cm, $status, $USER->id);
+}
+
 $output = $PAGE->get_renderer('mod_webdavcheck');
 echo $output->header();
 echo $output->heading(format_string($webdavcheck->name));
