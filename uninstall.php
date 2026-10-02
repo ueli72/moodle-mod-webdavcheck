@@ -15,18 +15,29 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * WebDAV Check event definitions.
+ * Uninstall code for mod_webdavcheck.
  *
  * @package    mod_webdavcheck
  * @copyright  2026 Ueli Leutwyler
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+/**
+ * Remove all data belonging to the mod_webdavcheck plugin.
+ *
+ * @return bool
+ */
+function xmldb_webdavcheck_uninstall() {
+    global $DB;
 
-$observers = [
-    [
-        'eventname' => '\\core\\event\\course_module_created',
-        'callback' => 'mod_webdavcheck_course_module_created',
-    ],
-];
+    $dbman = $DB->get_manager();
+
+    $table = new xmldb_table('webdavcheck');
+    if ($dbman->table_exists($table)) {
+        $dbman->drop_table($table);
+    }
+
+    unset_all_config_for_plugin('mod_webdavcheck');
+
+    return true;
+}

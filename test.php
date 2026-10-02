@@ -18,7 +18,7 @@
  * WebDAV Check connection test page.
  *
  * @package    mod_webdavcheck
- * @copyright  2026
+ * @copyright  2026 Ueli Leutwyler
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -36,7 +36,17 @@ $PAGE->set_heading(get_string('testconnection', 'mod_webdavcheck'));
 
 $config = get_config('mod_webdavcheck');
 
+/**
+ * Form for the administrator WebDAV connection test.
+ *
+ * @package    mod_webdavcheck
+ * @copyright  2026 Ueli Leutwyler
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class webdavcheck_test_form extends moodleform {
+    /**
+     * Define the form.
+     */
     public function definition() {
         $mform = $this->_form;
         $mform->addElement('submit', 'test', get_string('testbutton', 'mod_webdavcheck'));

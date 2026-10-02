@@ -18,11 +18,9 @@
  * WebDAV Check upgrade script.
  *
  * @package    mod_webdavcheck
- * @copyright  2026
+ * @copyright  2026 Ueli Leutwyler
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * Upgrade function.

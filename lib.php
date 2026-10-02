@@ -18,7 +18,7 @@
  * WebDAV Check main library functions.
  *
  * @package    mod_webdavcheck
- * @copyright  2026
+ * @copyright  2026 Ueli Leutwyler
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -112,10 +112,26 @@ function webdavcheck_add_instance($data, $mform = null) {
         $editoroptions = webdavcheck_get_editor_options($context);
 
         if (!empty($successtext['itemid'])) {
-            $data->successtext = file_save_draft_area_files($successtext['itemid'], $context->id, 'mod_webdavcheck', 'successtext', 0, $editoroptions, $data->successtext);
+            $data->successtext = file_save_draft_area_files(
+                $successtext['itemid'],
+                $context->id,
+                'mod_webdavcheck',
+                'successtext',
+                0,
+                $editoroptions,
+                $data->successtext
+            );
         }
         if (!empty($failuretext['itemid'])) {
-            $data->failuretext = file_save_draft_area_files($failuretext['itemid'], $context->id, 'mod_webdavcheck', 'failuretext', 0, $editoroptions, $data->failuretext);
+            $data->failuretext = file_save_draft_area_files(
+                $failuretext['itemid'],
+                $context->id,
+                'mod_webdavcheck',
+                'failuretext',
+                0,
+                $editoroptions,
+                $data->failuretext
+            );
         }
         $DB->update_record('webdavcheck', $data);
     }
@@ -159,10 +175,26 @@ function webdavcheck_update_instance($data, $mform = null) {
         $editoroptions = webdavcheck_get_editor_options($context);
 
         if (!empty($successtext['itemid'])) {
-            $data->successtext = file_save_draft_area_files($successtext['itemid'], $context->id, 'mod_webdavcheck', 'successtext', 0, $editoroptions, $data->successtext);
+            $data->successtext = file_save_draft_area_files(
+                $successtext['itemid'],
+                $context->id,
+                'mod_webdavcheck',
+                'successtext',
+                0,
+                $editoroptions,
+                $data->successtext
+            );
         }
         if (!empty($failuretext['itemid'])) {
-            $data->failuretext = file_save_draft_area_files($failuretext['itemid'], $context->id, 'mod_webdavcheck', 'failuretext', 0, $editoroptions, $data->failuretext);
+            $data->failuretext = file_save_draft_area_files(
+                $failuretext['itemid'],
+                $context->id,
+                'mod_webdavcheck',
+                'failuretext',
+                0,
+                $editoroptions,
+                $data->failuretext
+            );
         }
         $DB->update_record('webdavcheck', $data);
     }
@@ -179,11 +211,9 @@ function webdavcheck_update_instance($data, $mform = null) {
 function webdavcheck_delete_instance($id) {
     global $DB;
 
-    if (!$webdavcheck = $DB->get_record('webdavcheck', ['id' => $id])) {
+    if (!$DB->record_exists('webdavcheck', ['id' => $id])) {
         return false;
     }
-
-    $cm = get_coursemodule_from_instance('webdavcheck', $id);
 
     $DB->delete_records('webdavcheck', ['id' => $id]);
 
@@ -208,8 +238,6 @@ function webdavcheck_supports($feature) {
             return true;
         case FEATURE_MODEDIT_DEFAULT_COMPLETION:
             return COMPLETION_TRACKING_AUTOMATIC;
-        case FEATURE_BACKUP_MOODLE2:
-            return false;
         case FEATURE_GRADE_HAS_GRADE:
             return false;
         default:
@@ -219,6 +247,9 @@ function webdavcheck_supports($feature) {
 
 /**
  * Return the completion state for a WebDAV Check instance.
+ *
+ * The $course parameter is required by the callback signature but not
+ * needed to determine the completion state.
  *
  * @param stdClass $course Course object
  * @param stdClass $cm Course module object
@@ -254,8 +285,6 @@ function webdavcheck_get_completion_state($course, $cm, $userid, $type) {
  * @return array ['found' => bool, 'error' => string|null]
  */
 function webdavcheck_check_file($webdavcheck, $user) {
-    global $CFG;
-
     $config = get_config('mod_webdavcheck');
 
     if (empty($config->webdavurl) || empty($config->webdavuser) || empty($config->webdavpass)) {
@@ -263,7 +292,7 @@ function webdavcheck_check_file($webdavcheck, $user) {
     }
 
     $pathtemplate = $webdavcheck->pathtemplate;
-    $path = str_replace(['{$user}', '{user}'], $user->username, $pathtemplate);
+    $path = str_replace(['{$user}', '{user}'], rawurlencode($user->username), $pathtemplate);
     $url = rtrim($config->webdavurl, '/') . '/' . ltrim($path, '/');
 
     $files = webdavcheck_webdav_propfind($url, $config->webdavuser, $config->webdavpass);
@@ -282,6 +311,27 @@ function webdavcheck_check_file($webdavcheck, $user) {
 }
 
 /**
+ * Translate a curl result into a user-facing error string, or null if there was no error.
+ *
+ * @param string|bool $response curl response
+ * @param int $httpcode HTTP status code
+ * @param string $error curl error message
+ * @return string|null error string or null if the request succeeded
+ */
+function webdavcheck_curl_error($response, $httpcode, $error) {
+    if ($response === false) {
+        return get_string('error_curl', 'mod_webdavcheck', $error);
+    }
+    if ($httpcode == 401) {
+        return get_string('error_unauthorized', 'mod_webdavcheck');
+    }
+    if ($httpcode == 404) {
+        return get_string('error_notfound', 'mod_webdavcheck');
+    }
+    return null;
+}
+
+/**
  * Perform a WebDAV PROPFIND request.
  *
  * @param string $url WebDAV URL
@@ -296,8 +346,8 @@ function webdavcheck_webdav_propfind($url, $username, $password) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_USERPWD, $username . ':' . $password);
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Depth: 1', 'Content-Type: text/xml']);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);
     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
@@ -308,16 +358,8 @@ function webdavcheck_webdav_propfind($url, $username, $password) {
     $error = curl_error($ch);
     curl_close($ch);
 
-    if ($response === false) {
-        return get_string('error_curl', 'mod_webdavcheck', $error);
-    }
-
-    if ($httpcode == 401) {
-        return get_string('error_unauthorized', 'mod_webdavcheck');
-    }
-
-    if ($httpcode == 404) {
-        return get_string('error_notfound', 'mod_webdavcheck');
+    if ($errorstring = webdavcheck_curl_error($response, $httpcode, $error)) {
+        return $errorstring;
     }
 
     // Alfresco and some servers do not support PROPFIND (501).
@@ -351,8 +393,8 @@ function webdavcheck_webdav_get_html($url, $username, $password) {
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_USERPWD, $username . ':' . $password);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);
     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
@@ -362,16 +404,8 @@ function webdavcheck_webdav_get_html($url, $username, $password) {
     $error = curl_error($ch);
     curl_close($ch);
 
-    if ($response === false) {
-        return get_string('error_curl', 'mod_webdavcheck', $error);
-    }
-
-    if ($httpcode == 401) {
-        return get_string('error_unauthorized', 'mod_webdavcheck');
-    }
-
-    if ($httpcode == 404) {
-        return get_string('error_notfound', 'mod_webdavcheck');
+    if ($errorstring = webdavcheck_curl_error($response, $httpcode, $error)) {
+        return $errorstring;
     }
 
     if ($httpcode != 200) {

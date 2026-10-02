@@ -18,7 +18,7 @@
  * WebDAV Check mod form.
  *
  * @package    mod_webdavcheck
- * @copyright  2026
+ * @copyright  2026 Ueli Leutwyler
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -30,11 +30,10 @@ require_once($CFG->dirroot . '/course/moodleform_mod.php');
  * WebDAV Check settings form.
  *
  * @package    mod_webdavcheck
- * @copyright  2026
+ * @copyright  2026 Ueli Leutwyler
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class mod_webdavcheck_mod_form extends moodleform_mod {
-
     /**
      * Define the form.
      */
@@ -129,14 +128,30 @@ class mod_webdavcheck_mod_form extends moodleform_mod {
 
             $draftitemid = file_get_submitted_draft_itemid('successtext');
             $defaultvalues['successtext'] = [
-                'text' => file_prepare_draft_area($draftitemid, $context->id, 'mod_webdavcheck', 'successtext', 0, $editoroptions, $defaultvalues['successtext'] ?? ''),
+                'text' => file_prepare_draft_area(
+                    $draftitemid,
+                    $context->id,
+                    'mod_webdavcheck',
+                    'successtext',
+                    0,
+                    $editoroptions,
+                    $defaultvalues['successtext'] ?? ''
+                ),
                 'format' => $defaultvalues['successtextformat'] ?? FORMAT_HTML,
                 'itemid' => $draftitemid,
             ];
 
             $draftitemid = file_get_submitted_draft_itemid('failuretext');
             $defaultvalues['failuretext'] = [
-                'text' => file_prepare_draft_area($draftitemid, $context->id, 'mod_webdavcheck', 'failuretext', 0, $editoroptions, $defaultvalues['failuretext'] ?? ''),
+                'text' => file_prepare_draft_area(
+                    $draftitemid,
+                    $context->id,
+                    'mod_webdavcheck',
+                    'failuretext',
+                    0,
+                    $editoroptions,
+                    $defaultvalues['failuretext'] ?? ''
+                ),
                 'format' => $defaultvalues['failuretextformat'] ?? FORMAT_HTML,
                 'itemid' => $draftitemid,
             ];

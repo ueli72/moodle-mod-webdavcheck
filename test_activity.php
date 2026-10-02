@@ -18,7 +18,7 @@
  * WebDAV Check activity test page.
  *
  * @package    mod_webdavcheck
- * @copyright  2026
+ * @copyright  2026 Ueli Leutwyler
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -50,20 +50,20 @@ if ($testuser) {
     $testuserobj = new stdClass();
     $testuserobj->username = $testuser;
     $testresult = webdavcheck_check_file($webdavcheck, $testuserobj);
-    
+
     // Also get the raw file list for display.
     $config = get_config('mod_webdavcheck');
     if (!empty($config->webdavurl) && !empty($config->webdavuser) && !empty($config->webdavpass)) {
-        $path = str_replace(['{$user}', '{user}'], $testuser, $webdavcheck->pathtemplate);
+        $path = str_replace(['{$user}', '{user}'], rawurlencode($testuser), $webdavcheck->pathtemplate);
         $url = rtrim($config->webdavurl, '/') . '/' . ltrim($path, '/');
-        
+
         // Direct curl test with full debug output.
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_USERPWD, $config->webdavuser . ':' . $config->webdavpass);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
         curl_setopt($ch, CURLOPT_HEADER, true);
@@ -71,7 +71,7 @@ if ($testuser) {
         $curlhttpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlerror = curl_error($ch);
         curl_close($ch);
-        
+
         $foundfiles = webdavcheck_webdav_propfind($url, $config->webdavuser, $config->webdavpass);
         if (is_string($foundfiles)) {
             $foundfiles = []; // Error occurred, show empty list.
@@ -95,7 +95,8 @@ $table->data = [
     [get_string('filepattern', 'mod_webdavcheck'), s($webdavcheck->filepattern)],
 ];
 if ($testuser) {
-    $fullpath = rtrim($config->webdavurl, '/') . '/' . ltrim(str_replace(['{$user}', '{user}'], $testuser, $webdavcheck->pathtemplate), '/');
+    $path = str_replace(['{$user}', '{user}'], rawurlencode($testuser), $webdavcheck->pathtemplate);
+    $fullpath = rtrim($config->webdavurl, '/') . '/' . ltrim($path, '/');
     $table->data[] = [get_string('fullpath', 'mod_webdavcheck'), s($fullpath)];
 }
 echo html_writer::table($table);
@@ -141,23 +142,31 @@ if ($testresult !== null) {
         );
     }
     echo html_writer::end_div();
-    
+
     // Always show found files for debugging.
-    echo html_writer::tag('h5', 'Gefundene Dateien:', ['class' => 'mt-3']);
+    echo html_writer::tag('h5', get_string('foundfiles', 'mod_webdavcheck'), ['class' => 'mt-3']);
     if (!empty($foundfiles)) {
         echo html_writer::alist($foundfiles);
     } else {
-        echo html_writer::tag('p', 'Keine Dateien gefunden (oder Fehler bei der Abfrage).', ['class' => 'text-muted']);
+        echo html_writer::tag('p', get_string('nofilesfound', 'mod_webdavcheck'), ['class' => 'text-muted']);
     }
-    echo html_writer::tag('p', 'Datei-Muster: ' . s($webdavcheck->filepattern), ['class' => 'text-muted small']);
-    
+    echo html_writer::tag(
+        'p',
+        get_string('filepattern', 'mod_webdavcheck') . ': ' . s($webdavcheck->filepattern),
+        ['class' => 'text-muted small']
+    );
+
     // Show raw debug info.
-    echo html_writer::tag('h5', 'Debug: Server-Antwort', ['class' => 'mt-3']);
-    echo html_writer::tag('p', 'HTTP Code: ' . s($curlhttpcode), ['class' => 'text-muted']);
+    echo html_writer::tag('h5', get_string('debugresponse', 'mod_webdavcheck'), ['class' => 'mt-3']);
+    echo html_writer::tag('p', get_string('httpcode', 'mod_webdavcheck', s($curlhttpcode)), ['class' => 'text-muted']);
     if ($curlerror) {
-        echo html_writer::tag('p', 'cURL Fehler: ' . s($curlerror), ['class' => 'text-danger']);
+        echo html_writer::tag('p', get_string('curlerror', 'mod_webdavcheck', s($curlerror)), ['class' => 'text-danger']);
     }
-    echo html_writer::tag('pre', s(substr($rawresponse, 0, 3000)), ['style' => 'max-height: 400px; overflow: auto; background: #f5f5f5; padding: 10px; font-size: 11px;']);
+    echo html_writer::tag(
+        'pre',
+        s(substr($rawresponse, 0, 3000)),
+        ['style' => 'max-height: 400px; overflow: auto; background: #f5f5f5; padding: 10px; font-size: 11px;']
+    );
 }
 
 echo $OUTPUT->footer();

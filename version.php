@@ -18,16 +18,16 @@
  * WebDAV Check version information.
  *
  * @package    mod_webdavcheck
- * @copyright  2026
+ * @copyright  2026 Ueli Leutwyler
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'mod_webdavcheck';
-$plugin->version   = 2026042030;
-$plugin->requires  = 2026042000; // Moodle 5.2.1.
-$plugin->release   = '1.3.3';
+$plugin->version   = 2026100200;
+$plugin->requires  = 2026042000; // Moodle 5.2.
+$plugin->supported = [502, 502];
+$plugin->release   = '1.4.0';
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->cron      = 0;
 $plugin->dependencies = [];

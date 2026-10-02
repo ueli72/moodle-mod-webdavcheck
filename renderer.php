@@ -18,21 +18,18 @@
  * WebDAV Check renderer.
  *
  * @package    mod_webdavcheck
- * @copyright  2026
+ * @copyright  2026 Ueli Leutwyler
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * WebDAV Check renderer class.
  *
  * @package    mod_webdavcheck
- * @copyright  2026
+ * @copyright  2026 Ueli Leutwyler
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class mod_webdavcheck_renderer extends plugin_renderer_base {
-
     /**
      * Render the check result with icons and text.
      *
@@ -45,7 +42,14 @@ class mod_webdavcheck_renderer extends plugin_renderer_base {
         $output = '';
 
         if ($result['found']) {
-            $text = file_rewrite_pluginfile_urls($webdavcheck->successtext, 'pluginfile.php', $context->id, 'mod_webdavcheck', 'successtext', 0);
+            $text = file_rewrite_pluginfile_urls(
+                $webdavcheck->successtext,
+                'pluginfile.php',
+                $context->id,
+                'mod_webdavcheck',
+                'successtext',
+                0
+            );
             $text = format_text($text, $webdavcheck->successtextformat, ['context' => $context]);
             $output .= html_writer::div(
                 html_writer::tag('i', '', ['class' => 'fa-solid fa-check-circle fa-3x text-success']) .
@@ -59,7 +63,14 @@ class mod_webdavcheck_renderer extends plugin_renderer_base {
                 'webdavcheck-status webdavcheck-error'
             );
         } else {
-            $text = file_rewrite_pluginfile_urls($webdavcheck->failuretext, 'pluginfile.php', $context->id, 'mod_webdavcheck', 'failuretext', 0);
+            $text = file_rewrite_pluginfile_urls(
+                $webdavcheck->failuretext,
+                'pluginfile.php',
+                $context->id,
+                'mod_webdavcheck',
+                'failuretext',
+                0
+            );
             $text = format_text($text, $webdavcheck->failuretextformat, ['context' => $context]);
             $output .= html_writer::div(
                 html_writer::tag('i', '', ['class' => 'fa-solid fa-times-circle fa-3x text-danger']) .
@@ -70,5 +81,4 @@ class mod_webdavcheck_renderer extends plugin_renderer_base {
 
         return $output;
     }
-
 }

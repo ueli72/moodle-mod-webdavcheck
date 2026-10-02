@@ -15,18 +15,30 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * WebDAV Check event definitions.
+ * Privacy API implementation for mod_webdavcheck.
  *
  * @package    mod_webdavcheck
  * @copyright  2026 Ueli Leutwyler
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+namespace mod_webdavcheck\privacy;
 
-$observers = [
-    [
-        'eventname' => '\\core\\event\\course_module_created',
-        'callback' => 'mod_webdavcheck_course_module_created',
-    ],
-];
+/**
+ * The mod_webdavcheck plugin stores no user data.
+ *
+ * @package    mod_webdavcheck
+ * @copyright  2026 Ueli Leutwyler
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class provider implements \core_privacy\local\metadata\null_provider {
+    /**
+     * Get the language string identifier with the component's language
+     * file to explain why this plugin stores no data.
+     *
+     * @return string
+     */
+    public static function get_reason(): string {
+        return 'privacy:metadata';
+    }
+}
