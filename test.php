@@ -59,7 +59,7 @@ $testresult = null;
 if ($mform->is_submitted()) {
     if (!empty($config->webdavurl) && !empty($config->webdavuser) && !empty($config->webdavpass)) {
         $url = rtrim($config->webdavurl, '/');
-        $files = webdavcheck_webdav_propfind($url, $config->webdavuser, $config->webdavpass);
+        $files = webdavcheck_webdav_propfind($url, $config->webdavuser, webdavcheck_get_webdav_password());
         if (is_string($files)) {
             $testresult = ['success' => false, 'message' => $files];
         } else {

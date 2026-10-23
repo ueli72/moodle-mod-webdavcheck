@@ -24,21 +24,29 @@
 
 namespace mod_webdavcheck\privacy;
 
+use core_privacy\local\metadata\collection;
+
 /**
- * The mod_webdavcheck plugin stores no user data.
+ * The mod_webdavcheck plugin does not store user data, but sends the
+ * username to the configured external WebDAV server.
  *
  * @package    mod_webdavcheck
  * @copyright  2026 Ueli Leutwyler
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class provider implements \core_privacy\local\metadata\null_provider {
+class provider implements \core_privacy\local\metadata\provider {
+
     /**
-     * Get the language string identifier with the component's language
-     * file to explain why this plugin stores no data.
+     * Returns metadata about this plugin's communication with an external location.
      *
-     * @return string
+     * @param collection $collection The initialised collection to add items to.
+     * @return collection A listing of user data stored through this system.
      */
-    public static function get_reason(): string {
-        return 'privacy:metadata';
+    public static function get_metadata(collection $collection): collection {
+        $collection->add_external_location_link('webdavserver', [
+            'username' => 'privacy:metadata:webdavserver:username',
+        ], 'privacy:metadata:webdavserver');
+
+        return $collection;
     }
 }

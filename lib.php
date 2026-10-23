@@ -238,6 +238,8 @@ function webdavcheck_supports($feature) {
             return true;
         case FEATURE_MODEDIT_DEFAULT_COMPLETION:
             return COMPLETION_TRACKING_AUTOMATIC;
+        case FEATURE_BACKUP_MOODLE2:
+            return true;
         case FEATURE_GRADE_HAS_GRADE:
             return false;
         default:
@@ -246,35 +248,59 @@ function webdavcheck_supports($feature) {
 }
 
 /**
- * Return the completion state for a WebDAV Check instance.
+ * Add a get_coursemodule_info function in case any WebDAV Check type wants to add 'extra' information
+ * for the course (see resource).
  *
- * The $course parameter is required by the callback signature but not
- * needed to determine the completion state.
+ * Given a course_module object, this function returns any "extra" information that may be needed
+ * when printing this activity in a course listing. See get_array_of_activities() in course/lib.php.
  *
- * @param stdClass $course Course object
- * @param stdClass $cm Course module object
- * @param int $userid User id
- * @param string $type Type of completion
- * @return bool
+ * @param stdClass $coursemodule The coursemodule object (record).
+ * @return cached_cm_info|false An object on information that the courses will know about
  */
-function webdavcheck_get_completion_state($course, $cm, $userid, $type) {
+function webdavcheck_get_coursemodule_info($coursemodule) {
     global $DB;
 
-    $webdavcheck = $DB->get_record('webdavcheck', ['id' => $cm->instance]);
-    if (!$webdavcheck || empty($webdavcheck->completionwebdav)) {
-        return $type == COMPLETION_AND;
+    $fields = 'id, name, intro, introformat, completionwebdav';
+    if (!$webdavcheck = $DB->get_record('webdavcheck', ['id' => $coursemodule->instance], $fields)) {
+        return false;
     }
 
-    // Only read the stored completion state; the actual WebDAV check is done in view.php
-    // when the user actively visits the activity. This avoids querying the WebDAV server
-    // on every course page load or completion report view.
-    $completion = $DB->get_record('course_modules_completion', ['coursemoduleid' => $cm->id, 'userid' => $userid]);
+    $result = new cached_cm_info();
+    $result->name = $webdavcheck->name;
 
-    if (!$completion) {
-        return $type == COMPLETION_AND;
+    if ($coursemodule->showdescription) {
+        // Convert intro to html. Do not filter cached version, filters run at display time.
+        $result->content = format_module_intro('webdavcheck', $webdavcheck, $coursemodule->id, false);
     }
 
-    return $completion->completionstate == COMPLETION_COMPLETE;
+    // Populate the custom completion rules as key => value pairs, but only if the completion mode is 'automatic'.
+    if ($coursemodule->completion == COMPLETION_TRACKING_AUTOMATIC) {
+        $result->customdata['customcompletionrules']['completionwebdav'] = $webdavcheck->completionwebdav;
+    }
+
+    return $result;
+}
+
+/**
+ * Return the decrypted WebDAV service password from the admin settings.
+ *
+ * The password is stored encrypted by admin_setting_encryptedpassword
+ * (see settings.php) using core\encryption.
+ *
+ * @return string The decrypted password, or an empty string if not set or not decryptable.
+ */
+function webdavcheck_get_webdav_password() {
+    $stored = get_config('mod_webdavcheck', 'webdavpass');
+    if ($stored === null || $stored === '') {
+        return '';
+    }
+
+    try {
+        return \core\encryption::decrypt($stored);
+    } catch (\moodle_exception $e) {
+        // The value cannot be decrypted with the current server key.
+        return '';
+    }
 }
 
 /**
@@ -295,7 +321,7 @@ function webdavcheck_check_file($webdavcheck, $user) {
     $path = str_replace(['{$user}', '{user}'], rawurlencode($user->username), $pathtemplate);
     $url = rtrim($config->webdavurl, '/') . '/' . ltrim($path, '/');
 
-    $files = webdavcheck_webdav_propfind($url, $config->webdavuser, $config->webdavpass);
+    $files = webdavcheck_webdav_propfind($url, $config->webdavuser, webdavcheck_get_webdav_password());
 
     if (is_string($files)) {
         return ['found' => false, 'error' => $files];
@@ -340,25 +366,20 @@ function webdavcheck_curl_error($response, $httpcode, $error) {
  * @return array|string Array of filenames or error string
  */
 function webdavcheck_webdav_propfind($url, $username, $password) {
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PROPFIND');
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_USERPWD, $username . ':' . $password);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Depth: 1', 'Content-Type: text/xml']);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    $curl = new curl();
+    $curl->setHeader(['Depth: 1', 'Content-Type: text/xml']);
+    $response = $curl->get($url, [], [
+        'CURLOPT_CUSTOMREQUEST' => 'PROPFIND',
+        'CURLOPT_RETURNTRANSFER' => true,
+        'CURLOPT_USERPWD' => $username . ':' . $password,
+        'CURLOPT_TIMEOUT' => 30,
+        'CURLOPT_CONNECTTIMEOUT' => 10,
+    ]);
 
-    $response = curl_exec($ch);
-    $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $contenttype = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-    $error = curl_error($ch);
-    curl_close($ch);
+    $httpcode = $curl->get_info()['http_code'] ?? 0;
+    $contenttype = $curl->get_info()['content_type'] ?? '';
 
-    if ($errorstring = webdavcheck_curl_error($response, $httpcode, $error)) {
+    if ($errorstring = webdavcheck_curl_error($response, $httpcode, $curl->error)) {
         return $errorstring;
     }
 
@@ -389,22 +410,17 @@ function webdavcheck_webdav_propfind($url, $username, $password) {
  * @return array|string Array of filenames or error string
  */
 function webdavcheck_webdav_get_html($url, $username, $password) {
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_USERPWD, $username . ':' . $password);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    $curl = new curl();
+    $response = $curl->get($url, [], [
+        'CURLOPT_RETURNTRANSFER' => true,
+        'CURLOPT_USERPWD' => $username . ':' . $password,
+        'CURLOPT_TIMEOUT' => 30,
+        'CURLOPT_CONNECTTIMEOUT' => 10,
+    ]);
 
-    $response = curl_exec($ch);
-    $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $error = curl_error($ch);
-    curl_close($ch);
+    $httpcode = $curl->get_info()['http_code'] ?? 0;
 
-    if ($errorstring = webdavcheck_curl_error($response, $httpcode, $error)) {
+    if ($errorstring = webdavcheck_curl_error($response, $httpcode, $curl->error)) {
         return $errorstring;
     }
 

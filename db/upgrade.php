@@ -62,5 +62,20 @@ function xmldb_webdavcheck_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026042030, 'webdavcheck');
     }
 
+    if ($oldversion < 2026102300) {
+        // Encrypt the WebDAV password (stored as plain text by previous versions).
+        $stored = get_config('mod_webdavcheck', 'webdavpass');
+        if (!empty($stored)) {
+            try {
+                \core\encryption::decrypt($stored);
+            } catch (\moodle_exception $e) {
+                // The value is not decryptable, so it was stored as plain text.
+                set_config('webdavpass', \core\encryption::encrypt($stored), 'mod_webdavcheck');
+            }
+        }
+
+        upgrade_mod_savepoint(true, 2026102300, 'webdavcheck');
+    }
+
     return true;
 }

@@ -47,11 +47,10 @@ if ($ADMIN->fulltree) {
         PARAM_TEXT
     ));
 
-    $settings->add(new admin_setting_configpasswordunmask(
+    $settings->add(new admin_setting_encryptedpassword(
         'mod_webdavcheck/webdavpass',
         get_string('webdavpass', 'mod_webdavcheck'),
-        get_string('webdavpass_desc', 'mod_webdavcheck'),
-        ''
+        get_string('webdavpass_desc', 'mod_webdavcheck')
     ));
 
     // Test connection link.

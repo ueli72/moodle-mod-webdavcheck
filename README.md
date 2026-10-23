@@ -21,7 +21,7 @@ automatic course completion.
 - Per-instance connection test for teachers (from the activity settings form)
 - Fallback: if the server does not support `PROPFIND`, an HTML directory listing is parsed
 - Backup and restore support
-- Privacy API: the plugin stores no personal data (null provider)
+- Privacy API: no personal data stored, external location (WebDAV server) declared
 - Language support: English, German
 
 ## Requirements
@@ -52,16 +52,29 @@ automatic course completion.
 
 ## Security notes
 
-- WebDAV credentials are configured globally by the administrator and stored in the
-  Moodle configuration (password field is masked in the UI).
-- All requests to the WebDAV server enforce TLS certificate verification.
+- WebDAV credentials are configured globally by the administrator. The password is
+  stored encrypted (via `admin_setting_encryptedpassword` / `core\encryption`) and
+  is never displayed again after saving.
+- All HTTP requests use Moodle's `curl` wrapper (proxy and security settings of the
+  site apply) and enforce TLS certificate verification.
+- The path template must contain the `{$user}` placeholder and is validated against
+  path traversal (`..`), absolute paths and query/fragment characters.
+- The per-activity connection test only accepts usernames of users enrolled in the
+  course; the raw server response is only shown to site administrators.
 - The username is inserted into the path template URL-encoded.
 
 ## Privacy
 
-This plugin does not store any personal data. It queries the configured WebDAV server
-on behalf of the current user (server-to-server, using the globally configured
-credentials) and only checks for the presence of a file.
+This plugin does not store any personal data, but it sends the username of the
+current user to the configured WebDAV server (server-to-server, using the globally
+configured credentials) as part of the request path to check for the presence of a
+file. This external location is declared via the Privacy API
+(`add_external_location_link`).
+
+## Backup and restore
+
+Course backup, restore, import and duplicate are supported
+(`FEATURE_BACKUP_MOODLE2`).
 
 ## License
 

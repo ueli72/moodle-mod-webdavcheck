@@ -25,9 +25,9 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'mod_webdavcheck';
-$plugin->version   = 2026100200;
+$plugin->version   = 2026102300;
 $plugin->requires  = 2026042000; // Moodle 5.2.
 $plugin->supported = [502, 502];
-$plugin->release   = '1.4.0';
+$plugin->release   = '1.5.0';
 $plugin->maturity  = MATURITY_STABLE;
 $plugin->dependencies = [];

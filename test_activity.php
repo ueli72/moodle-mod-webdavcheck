@@ -26,7 +26,7 @@ require_once('../../config.php');
 require_once('lib.php');
 
 $instance = required_param('instance', PARAM_INT);
-$testuser = optional_param('testuser', '', PARAM_RAW);
+$testuser = optional_param('testuser', '', PARAM_USERNAME);
 
 $webdavcheck = $DB->get_record('webdavcheck', ['id' => $instance], '*', MUST_EXIST);
 $cm = get_coursemodule_from_instance('webdavcheck', $instance);
@@ -46,33 +46,40 @@ $foundfiles = [];
 $rawresponse = '';
 $curlerror = '';
 $curlhttpcode = 0;
+$usererror = null;
 if ($testuser) {
-    $testuserobj = new stdClass();
-    $testuserobj->username = $testuser;
-    $testresult = webdavcheck_check_file($webdavcheck, $testuserobj);
+    $testuserobj = $DB->get_record('user', ['username' => $testuser, 'deleted' => 0], '*', IGNORE_MISSING);
+    if (!$testuserobj) {
+        $usererror = get_string('testuser_notfound', 'mod_webdavcheck');
+    } else if (!is_enrolled($context, $testuserobj->id, '', true)) {
+        $usererror = get_string('testuser_notenrolled', 'mod_webdavcheck');
+    } else {
+        $testresult = webdavcheck_check_file($webdavcheck, $testuserobj);
+    }
 
     // Also get the raw file list for display.
     $config = get_config('mod_webdavcheck');
-    if (!empty($config->webdavurl) && !empty($config->webdavuser) && !empty($config->webdavpass)) {
-        $path = str_replace(['{$user}', '{user}'], rawurlencode($testuser), $webdavcheck->pathtemplate);
+    if (!$usererror && !empty($config->webdavurl) && !empty($config->webdavuser) && !empty($config->webdavpass)) {
+        $path = str_replace(['{$user}', '{user}'], rawurlencode($testuserobj->username), $webdavcheck->pathtemplate);
         $url = rtrim($config->webdavurl, '/') . '/' . ltrim($path, '/');
 
-        // Direct curl test with full debug output.
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_USERPWD, $config->webdavuser . ':' . $config->webdavpass);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLOPT_HEADER, true);
-        $rawresponse = curl_exec($ch);
-        $curlhttpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlerror = curl_error($ch);
-        curl_close($ch);
+        $password = webdavcheck_get_webdav_password();
 
-        $foundfiles = webdavcheck_webdav_propfind($url, $config->webdavuser, $config->webdavpass);
+        // Raw request for the debug output (site administrators only).
+        if (is_siteadmin()) {
+            $curl = new curl();
+            $curl->setopt(['CURLOPT_HEADER' => true]);
+            $rawresponse = $curl->get($url, [], [
+                'CURLOPT_RETURNTRANSFER' => true,
+                'CURLOPT_USERPWD' => $config->webdavuser . ':' . $password,
+                'CURLOPT_TIMEOUT' => 30,
+                'CURLOPT_CONNECTTIMEOUT' => 10,
+            ]);
+            $curlhttpcode = $curl->get_info()['http_code'] ?? 0;
+            $curlerror = $curl->error;
+        }
+
+        $foundfiles = webdavcheck_webdav_propfind($url, $config->webdavuser, $password);
         if (is_string($foundfiles)) {
             $foundfiles = []; // Error occurred, show empty list.
         }
@@ -94,8 +101,8 @@ $table->data = [
     [get_string('pathtemplate', 'mod_webdavcheck'), s($webdavcheck->pathtemplate)],
     [get_string('filepattern', 'mod_webdavcheck'), s($webdavcheck->filepattern)],
 ];
-if ($testuser) {
-    $path = str_replace(['{$user}', '{user}'], rawurlencode($testuser), $webdavcheck->pathtemplate);
+if ($testuser && $testuserobj) {
+    $path = str_replace(['{$user}', '{user}'], rawurlencode($testuserobj->username), $webdavcheck->pathtemplate);
     $fullpath = rtrim($config->webdavurl, '/') . '/' . ltrim($path, '/');
     $table->data[] = [get_string('fullpath', 'mod_webdavcheck'), s($fullpath)];
 }
@@ -123,7 +130,11 @@ echo html_writer::end_div();
 echo html_writer::end_tag('form');
 
 // Result.
-if ($testresult !== null) {
+if ($testuser && $usererror) {
+    echo html_writer::start_div('mt-3');
+    echo $OUTPUT->notification($usererror, 'error');
+    echo html_writer::end_div();
+} else if ($testresult !== null) {
     echo html_writer::start_div('mt-3');
     if ($testresult['found']) {
         echo $OUTPUT->notification(
@@ -156,17 +167,19 @@ if ($testresult !== null) {
         ['class' => 'text-muted small']
     );
 
-    // Show raw debug info.
-    echo html_writer::tag('h5', get_string('debugresponse', 'mod_webdavcheck'), ['class' => 'mt-3']);
-    echo html_writer::tag('p', get_string('httpcode', 'mod_webdavcheck', s($curlhttpcode)), ['class' => 'text-muted']);
-    if ($curlerror) {
-        echo html_writer::tag('p', get_string('curlerror', 'mod_webdavcheck', s($curlerror)), ['class' => 'text-danger']);
+    // Show raw debug info to site administrators only.
+    if (is_siteadmin()) {
+        echo html_writer::tag('h5', get_string('debugresponse', 'mod_webdavcheck'), ['class' => 'mt-3']);
+        echo html_writer::tag('p', get_string('httpcode', 'mod_webdavcheck', s($curlhttpcode)), ['class' => 'text-muted']);
+        if ($curlerror) {
+            echo html_writer::tag('p', get_string('curlerror', 'mod_webdavcheck', s($curlerror)), ['class' => 'text-danger']);
+        }
+        echo html_writer::tag(
+            'pre',
+            s(substr($rawresponse, 0, 3000)),
+            ['style' => 'max-height: 400px; overflow: auto; background: #f5f5f5; padding: 10px; font-size: 11px;']
+        );
     }
-    echo html_writer::tag(
-        'pre',
-        s(substr($rawresponse, 0, 3000)),
-        ['style' => 'max-height: 400px; overflow: auto; background: #f5f5f5; padding: 10px; font-size: 11px;']
-    );
 }
 
 echo $OUTPUT->footer();

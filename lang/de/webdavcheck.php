@@ -22,6 +22,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+$string['completiondetail:webdavfile'] = 'Die WebDAV-Datei ist vorhanden';
 $string['completionwebdav'] = 'WebDAV-Datei vorhanden';
 $string['curlerror'] = 'cURL-Fehler: {$a}';
 $string['debugresponse'] = 'Debug: Serverantwort';
@@ -45,10 +46,14 @@ $string['modulenameplural'] = 'WebDAV-Prüfungen';
 $string['nofilesfound'] = 'Keine Dateien gefunden (oder Fehler bei der Abfrage).';
 $string['nowebdavchecks'] = 'In diesem Kurs wurden keine WebDAV-Prüfungen gefunden.';
 $string['pathtemplate'] = 'Pfad-Template';
-$string['pathtemplate_help'] = 'Relativer Pfad zum WebDAV-Ordner. Verwenden Sie {$user} als Platzhalter für den Benutzernamen. Beispiel: Shared/{$user}/abgaben/';
+$string['pathtemplate_help'] = 'Relativer Pfad zum WebDAV-Ordner. Verwenden Sie {$user} als Platzhalter für den Benutzernamen. Der Platzhalter ist erforderlich. Beispiel: Shared/{$user}/abgaben/';
+$string['pathtemplate_invalid'] = 'Das Pfad-Template darf keine Pfad-Traversierung (..), absolute Pfade oder Query-/Fragment-Zeichen (? oder #) enthalten.';
+$string['pathtemplate_userrequired'] = 'Das Pfad-Template muss den Platzhalter {$user} enthalten.';
 $string['pluginadministration'] = 'WebDAV-Prüfung Administration';
 $string['pluginname'] = 'WebDAV-Prüfung';
 $string['privacy:metadata'] = 'Die WebDAV-Prüfung speichert keine personenbezogenen Daten. Sie verbindet sich im Namen der aktuellen Person mit dem konfigurierten WebDAV-Server, um das Vorhandensein einer Datei zu prüfen.';
+$string['privacy:metadata:webdavserver'] = 'Der vom Administrator konfigurierte WebDAV-Server. Beim Aufruf der Aktivität (oder bei der Neuberechnung des Abschlussstatus) wird eine Anfrage an diesen Server gesendet.';
+$string['privacy:metadata:webdavserver:username'] = 'Der Benutzername der aktuellen Person wird als Teil des Anfragepfads an den WebDAV-Server gesendet, um das Vorhandensein einer Datei zu prüfen.';
 $string['setting'] = 'Einstellung';
 $string['successtext'] = 'Erfolgsmeldung';
 $string['test_info'] = 'Klicken Sie auf den Button, um die WebDAV-Verbindung mit den konfigurierten Einstellungen zu testen.';
@@ -59,6 +64,8 @@ $string['testresult'] = 'Test-Ergebnis';
 $string['testresult_error'] = 'Fehler bei der Prüfung: {$a}';
 $string['testresult_found'] = 'Bedingung erfüllt! Die Datei wurde für diesen Benutzer gefunden.';
 $string['testresult_notfound'] = 'Bedingung nicht erfüllt! Die Datei wurde für diesen Benutzer nicht gefunden.';
+$string['testuser_notenrolled'] = 'Diese Person ist in diesem Kurs nicht eingeschrieben.';
+$string['testuser_notfound'] = 'Diese Person wurde nicht gefunden.';
 $string['testwithuser'] = 'Verbindungs-Check';
 $string['testwithuser_desc'] = 'Geben Sie einen Benutzernamen ein, um zu prüfen, ob der WebDAV-Pfad und das Datei-Muster für diesen Benutzer zutreffen.';
 $string['value'] = 'Wert';

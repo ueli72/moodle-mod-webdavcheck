@@ -100,8 +100,11 @@ class mod_webdavcheck_mod_form extends moodleform_mod {
      */
     public function add_completion_rules() {
         $mform = $this->_form;
-        $mform->addElement('checkbox', 'completionwebdav', '', get_string('completionwebdav', 'mod_webdavcheck'));
-        return ['completionwebdav'];
+
+        $suffix = $this->get_suffix();
+        $mform->addElement('checkbox', 'completionwebdav' . $suffix, '',
+            get_string('completionwebdav', 'mod_webdavcheck'));
+        return ['completionwebdav' . $suffix];
     }
 
     /**
@@ -111,7 +114,36 @@ class mod_webdavcheck_mod_form extends moodleform_mod {
      * @return bool
      */
     public function completion_rule_enabled($data) {
-        return !empty($data['completionwebdav']);
+        return !empty($data['completionwebdav' . $this->get_suffix()]);
+    }
+
+    /**
+     * Validate the form data.
+     *
+     * The path template must contain the {$user} placeholder and must not
+     * contain path traversal, absolute paths or query/fragment characters.
+     *
+     * @param array $data Submitted form data
+     * @param array $files Submitted files
+     * @return array Errors keyed by element name
+     */
+    public function validation($data, $files) {
+        $errors = parent::validation($data, $files);
+
+        $template = trim($data['pathtemplate'] ?? '');
+        if ($template !== '') {
+            if (strpos($template, '{$user}') === false) {
+                $errors['pathtemplate'] = get_string('pathtemplate_userrequired', 'mod_webdavcheck');
+            } else if (strpos($template, '..') !== false) {
+                $errors['pathtemplate'] = get_string('pathtemplate_invalid', 'mod_webdavcheck');
+            } else if ($template[0] === '/' || $template[0] === '\\' || preg_match('#^[a-zA-Z]:#', $template)) {
+                $errors['pathtemplate'] = get_string('pathtemplate_invalid', 'mod_webdavcheck');
+            } else if (strpbrk($template, '?#') !== false) {
+                $errors['pathtemplate'] = get_string('pathtemplate_invalid', 'mod_webdavcheck');
+            }
+        }
+
+        return $errors;
     }
 
     /**

@@ -22,6 +22,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+$string['completiondetail:webdavfile'] = 'The WebDAV file is present';
 $string['completionwebdav'] = 'WebDAV file present';
 $string['curlerror'] = 'cURL error: {$a}';
 $string['debugresponse'] = 'Debug: server response';
@@ -45,10 +46,14 @@ $string['modulenameplural'] = 'WebDAV Checks';
 $string['nofilesfound'] = 'No files found (or error while querying).';
 $string['nowebdavchecks'] = 'No WebDAV Check activities found in this course.';
 $string['pathtemplate'] = 'Path Template';
-$string['pathtemplate_help'] = 'Relative path to the WebDAV folder. Use {$user} as placeholder for the username. Example: Shared/{$user}/submissions/';
+$string['pathtemplate_help'] = 'Relative path to the WebDAV folder. Use {$user} as placeholder for the username. The placeholder is required. Example: Shared/{$user}/submissions/';
+$string['pathtemplate_invalid'] = 'The path template must not contain path traversal (..), absolute paths, or query/fragment characters (? or #).';
+$string['pathtemplate_userrequired'] = 'The path template must contain the {$user} placeholder.';
 $string['pluginadministration'] = 'WebDAV Check administration';
 $string['pluginname'] = 'WebDAV Check';
 $string['privacy:metadata'] = 'The WebDAV Check activity does not store any personal data. It connects to the configured WebDAV server on behalf of the current user to check for the presence of a file.';
+$string['privacy:metadata:webdavserver'] = 'The WebDAV server configured by the site administrator. When a user views the activity (or the completion state is recalculated), a request is sent to this server.';
+$string['privacy:metadata:webdavserver:username'] = 'The username of the current user is sent to the WebDAV server as part of the request path to check for the presence of a file.';
 $string['setting'] = 'Setting';
 $string['successtext'] = 'Success Message';
 $string['test_info'] = 'Click the button below to test the WebDAV connection using the configured settings.';
@@ -59,6 +64,8 @@ $string['testresult'] = 'Test Result';
 $string['testresult_error'] = 'Error during check: {$a}';
 $string['testresult_found'] = 'Condition met! The file was found for this user.';
 $string['testresult_notfound'] = 'Condition not met! The file was not found for this user.';
+$string['testuser_notenrolled'] = 'This user is not enrolled in this course.';
+$string['testuser_notfound'] = 'This user was not found.';
 $string['testwithuser'] = 'Connection Check';
 $string['testwithuser_desc'] = 'Enter a username to test if the WebDAV path and file pattern match for this user.';
 $string['value'] = 'Value';

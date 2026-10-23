@@ -23,6 +23,10 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+defined('MOODLE_INTERNAL') || die();
+
+require_once($CFG->dirroot . '/mod/webdavcheck/backup/moodle2/restore_webdavcheck_stepslib.php');
+
 /**
  * Provides all the settings and steps to perform one complete restore of a WebDAV Check activity.
  *
@@ -64,8 +68,7 @@ class restore_webdavcheck_activity_task extends restore_activity_task {
     public static function define_decode_rules() {
         $rules = [];
 
-        $rules[] = new restore_decode_rule('WEBDAVCHECKINDEX', '/mod/webdavcheck/index.php', 'course');
-        $rules[] = new restore_decode_rule('WEBDAVCHECKINDEXBYID', '/mod/webdavcheck/index.php?id=$1', 'course');
+        $rules[] = new restore_decode_rule('WEBDAVCHECKINDEX', '/mod/webdavcheck/index.php?id=$1', 'course');
         $rules[] = new restore_decode_rule('WEBDAVCHECKVIEWBYID', '/mod/webdavcheck/view.php?id=$1', 'course_module');
 
         return $rules;
